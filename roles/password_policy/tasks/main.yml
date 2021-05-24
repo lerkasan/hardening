@@ -1,0 +1,114 @@
+---
+- name: Install libpam-pwquality if OS family is Debian
+  apt:
+    name: libpam-pwquality
+    state: present
+  become: yes
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Configure PAM, insert the module pam_pwquality.so in /etc/pam.d/common-password if OS family is Debian
+  community.general.pamd:
+    name: common-password
+    type: password
+    control: '[success=1 default=ignore]'
+    module_path: pam_unix.so
+    new_type: password
+    new_control: requisite
+    new_module_path: pam_pwquality.so
+    state: before
+  become: yes
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Configure PAM, check that arguments for the module pam_pwquality.so are present in /etc/pam.d/common-password if OS family is Debian
+  community.general.pamd:
+    name: common-password
+    type: password
+    control: requisite
+    module_path: pam_pwquality.so
+    module_arguments:
+      - reject_username
+      - enforce_for_root
+      - retry=3
+    state: args_present
+  become: yes
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Configure PAM, insert the module pam_pwquality.so in /etc/pam.d/system-auth if OS family is RedHat
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    new_type: password
+    new_control: requisite
+    new_module_path: pam_pwquality.so
+    state: before
+  become: yes
+  when: (ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution'] != "CentOS") or (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] >= "7")
+
+- name: Configure PAM, insert the module pam_pwquality.so in /etc/pam.d/system-auth if OS family is RedHat
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    new_type: password
+    new_control: requisite
+    new_module_path: pam_pwquality.so
+    state: before
+  become: yes
+  when:
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] >= "7"
+
+- name: Install libselinux-python if OS Fedora or is CentOS 6 and lower
+  yum:
+    name: libselinux-python
+    state: present
+  become: yes
+  when: (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] <= "6") or ansible_facts['distribution'] == "Fedora"
+
+- name: Configure PAM, insert the module pam_cracklib.so in /etc/pam.d/system-auth if OS is CentOS 6 and lower
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    new_type: password
+    new_control: requisite
+    new_module_path: pam_cracklib.so
+    state: before
+  become: yes
+  when:
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] <= "6"
+
+- name: Configure PAM, check that arguments for the module pam_pwquality.so are present in /etc/pam.d/system-auth if OS family is RedHat
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: requisite
+    module_path: pam_pwquality.so
+    module_arguments:
+      - reject_username
+      - enforce_for_root
+      - retry=3
+    state: args_present
+  become: yes
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Configure PAM, check that arguments for the module pam_pwquality.so are present in /etc/pam.d/system-auth if OS family is RedHat
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: requisite
+    module_path: pam_cracklib.so
+    module_arguments:
+      - reject_username
+      - enforce_for_root
+      - retry=3
+    state: args_present
+  become: yes
+  when: ansible_facts['os_family'] == "RedHat"

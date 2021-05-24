@@ -1,0 +1,4 @@
+---
+- hosts: linux_servers
+  roles:
+    - restrict_ssh_access

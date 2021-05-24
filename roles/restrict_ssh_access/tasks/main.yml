@@ -1,0 +1,45 @@
+---
+- name: Add ssh restrictions to /etc/hosts.allow file
+  lineinfile:
+    path: /etc/hosts.allow
+    regexp: '^sshd :'
+    line: 'sshd : {{ host_ip }}, LOCAL'
+    insertbefore: '^sshd'
+    state: present
+  become: yes
+  when: (ansible_facts['distribution'] != "CentOS" and ansible_facts['distribution'] != "RHEL") or ansible_facts['distribution_major_version'] < "8"
+
+- name: Add ssh restrictions to /etc/hosts.deny file
+  lineinfile:
+    path: /etc/hosts.deny
+    regexp: '^sshd :'
+    line: 'sshd : ALL'
+    insertbefore: '^sshd'
+    state: present
+  become: yes
+  when: (ansible_facts['distribution'] != "CentOS" and ansible_facts['distribution'] != "RHEL") or ansible_facts['distribution_major_version'] < "8"
+
+- name: Add AllowUsers to /etc/ssh/sshd_config file for CentOS 8
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^AllowUsers'
+    line: 'AllowUsers *@{{ host_ip }}, *@127.0.0.1'
+    state: present
+  become: yes
+  when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RHEL") and ansible_facts['distribution_major_version'] >= "8"
+
+- name: Add DenyUsers to /etc/ssh/sshd_config file for CentOS 8
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^DenyUsers'
+    line: 'DenyUsers *@*'
+    state: present
+  become: yes
+  when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RHEL")  and ansible_facts['distribution_major_version'] >= "8"
+
+- name: Restart sshd service after changes to /etc/ssh/sshd_config file for CentOS 8
+  service:
+    name: sshd
+    state: restarted
+  become: yes
+  when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RHEL")  and ansible_facts['distribution_major_version'] >= "8"
